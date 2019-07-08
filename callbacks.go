@@ -88,7 +88,16 @@ func addUpdateRecord(scope *gorm.Scope, opts options) error {
 		cl.RawDiff = string(jd)
 	}
 
-	return scope.DB().Create(cl).Error
+	if err = scope.DB().Create(cl).Error; err != nil {
+		return err
+	}
+
+	idx, err := newChangeLogIndex(cl.ID, scope)
+	if err != nil {
+		return err
+	}
+
+	return scope.DB().Create(idx).Error
 }
 
 func newChangeLog(scope *gorm.Scope, action string) (*ChangeLog, error) {
@@ -111,13 +120,35 @@ func newChangeLog(scope *gorm.Scope, action string) (*ChangeLog, error) {
 	}, nil
 }
 
+func newChangeLogIndex(changeLogID uuid.UUID, scope *gorm.Scope) (*ChangeLogIndex, error) {
+	userID, err := pluckUserID(fetchChangeLogMeta(scope))
+	if err != nil {
+		return nil, err
+	}
+
+	return &ChangeLogIndex{
+		ChangeLogID: changeLogID,
+		UserID:      userID,
+	}, nil
+}
+
 func addRecord(scope *gorm.Scope, action string) error {
 	cl, err := newChangeLog(scope, action)
 	if err != nil {
 		return nil
 	}
 
-	return scope.DB().Create(cl).Error
+	cl.RawDiff = "null"
+	if err = scope.DB().Create(cl).Error; err != nil {
+		return err
+	}
+
+	idx, err := newChangeLogIndex(cl.ID, scope)
+	if err != nil {
+		return nil
+	}
+
+	return scope.DB().Create(idx).Error
 }
 
 func computeUpdateDiff(scope *gorm.Scope) UpdateDiff {

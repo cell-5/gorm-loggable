@@ -2,41 +2,37 @@ package loggable
 
 import (
 	"fmt"
-	"testing"
-	"time"
-
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"testing"
 )
 
 var db *gorm.DB
 
-type SomeType struct {
+type Person struct {
 	gorm.Model
-	Source string
-	MetaModel
-}
-
-type MetaModel struct {
-	createdBy string
 	LoggableModel
+	Name   string
+	UserID uint
 }
 
-func (m MetaModel) Meta() interface{} {
+func (p Person) Meta() interface{} {
 	return struct {
-		CreatedBy string
-	}{CreatedBy: m.createdBy}
+		UserID uint
+	}{
+		UserID: p.UserID,
+	}
 }
 
 func TestMain(m *testing.M) {
 	database, err := gorm.Open(
-		"postgres",
+		"mysql",
 		fmt.Sprintf(
-			"postgres://%s:%s@%s:%d/%s?sslmode=disable",
+			"%v:%v@tcp(%v:%v)/%v?charset=utf8&parseTime=True&loc=Local",
 			"root",
-			"keepitsimple",
+			"sesame",
 			"localhost",
-			5432,
+			3306,
 			"loggable",
 		),
 	)
@@ -45,12 +41,13 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	database = database.LogMode(true)
-	_, err = Register(database)
+
+	_, err = Register(database, ComputeDiff())
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
 	}
-	err = database.AutoMigrate(SomeType{}).Error
+	err = database.AutoMigrate(Person{}).Error
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
@@ -60,15 +57,19 @@ func TestMain(m *testing.M) {
 }
 
 func TestTryModel(t *testing.T) {
-	newmodel := SomeType{Source: time.Now().Format(time.Stamp)}
-	newmodel.createdBy = "some user"
+	newmodel := Person{
+		Name:  "Pat",
+		UserID: 20,
+	}
 	err := db.Create(&newmodel).Error
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	fmt.Println(newmodel.ID)
-	newmodel.Source = "updated field"
-	err = db.Model(SomeType{}).Save(&newmodel).Error
+
+	newmodel.Name = "John"
+	err = db.Model(Person{}).Save(&newmodel).Error
 	if err != nil {
 		t.Fatal(err)
 	}
