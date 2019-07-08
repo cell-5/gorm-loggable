@@ -148,7 +148,6 @@ func addRecord(scope *gorm.Scope, action string) error {
 		return nil
 	}
 
-	cl.RawDiff = "null"
 	if err = scope.DB().Create(cl).Error; err != nil {
 		return err
 	}
