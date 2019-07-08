@@ -45,7 +45,7 @@ type ChangeLog struct {
 	RawDiff    string      `sql:"type:JSON"`
 	CreatedBy  string      `gorm:"index"`
 	Object     interface{} `sql:"-"`
-	Meta       interface{} `sql:"-"`
+	Meta       interface{}
 }
 
 func (l *ChangeLog) prepareObject(objType reflect.Type) (err error) {
