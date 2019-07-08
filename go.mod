@@ -1,4 +1,4 @@
-module github.com/sas1024/gorm-loggable
+module github.com/cell-5/gorm-loggable
 
 require (
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
