@@ -101,6 +101,12 @@ func newChangeLog(scope *gorm.Scope, action string) (*ChangeLog, error) {
 		return nil, err
 	}
 
+	var meta interface{}
+	val, ok := scope.Value.(Interface)
+	if ok {
+		meta = val.Meta()
+	}
+
 	return &ChangeLog{
 		ID:         id,
 		Action:     action,
@@ -108,6 +114,7 @@ func newChangeLog(scope *gorm.Scope, action string) (*ChangeLog, error) {
 		ObjectType: scope.GetModelStruct().ModelType.Name(),
 		RawObject:  string(rawObject),
 		RawMeta:    string(fetchChangeLogMeta(scope)),
+		Meta:       meta,
 	}, nil
 }
 
