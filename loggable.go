@@ -2,6 +2,7 @@ package loggable
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -20,6 +21,11 @@ type Interface interface {
 	isEnabled() bool
 	// enable/disable loggable
 	Enable(v bool)
+}
+
+// UserIdentified is used to extract UserID from Meta
+type UserIdentified struct {
+	UserID uint
 }
 
 // LoggableModel is a root structure, which implement Interface.
@@ -42,10 +48,17 @@ type ChangeLog struct {
 	ObjectType string      `gorm:"index"`
 	RawObject  string      `sql:"type:JSON"`
 	RawMeta    string      `sql:"type:JSON"`
-	RawDiff    string      `sql:"type:JSON"`
+	RawDiff    string     `sql:"type:JSON"`
 	CreatedBy  string      `gorm:"index"`
 	Object     interface{} `sql:"-"`
 	Meta       interface{} `sql:"-"`
+}
+
+type ChangeLogIndex struct {
+	ID          uint      `gorm:"primary_key;"`
+	CreatedAt   time.Time `sql:"DEFAULT:current_timestamp"`
+	ChangeLogID uuid.UUID
+	UserID      uint `gorm:"index"`
 }
 
 func (l *ChangeLog) prepareObject(objType reflect.Type) (err error) {
@@ -101,4 +114,23 @@ func isLoggable(value interface{}) bool {
 func isEnabled(value interface{}) bool {
 	v, ok := value.(Interface)
 	return ok && v.isEnabled()
+}
+
+func pluckUserID(input []byte) (uint, error) {
+	m := make(map[string]interface{})
+	if err := json.Unmarshal(input, &m); err != nil {
+		return 0, err
+	}
+
+	v, ok := m["UserID"]
+	if !ok {
+		return 0, errors.New("UserID not found")
+	}
+
+	uid, ok := v.(float64)
+	if !ok {
+		return uint(uid), errors.New("UserID is non-numeric")
+	}
+
+	return uint(uid), nil
 }
