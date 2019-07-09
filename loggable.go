@@ -23,11 +23,6 @@ type Interface interface {
 	Enable(v bool)
 }
 
-// UserIdentified is used to extract UserID from Meta
-type UserIdentified struct {
-	UserID uint
-}
-
 // LoggableModel is a root structure, which implement Interface.
 // Embed LoggableModel to your model so that Plugin starts tracking changes.
 type LoggableModel struct {
@@ -48,7 +43,7 @@ type ChangeLog struct {
 	ObjectType string      `gorm:"index"`
 	RawObject  string      `sql:"type:JSON"`
 	RawMeta    string      `sql:"type:JSON"`
-	RawDiff    string     `sql:"type:JSON"`
+	RawDiff    string      `sql:"type:JSON"`
 	CreatedBy  string      `gorm:"index"`
 	Object     interface{} `sql:"-"`
 	Meta       interface{} `sql:"-"`
